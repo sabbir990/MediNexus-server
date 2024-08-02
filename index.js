@@ -3,7 +3,7 @@ const app = express();
 require('dotenv').config();
 const cors = require('cors');
 const port = process.env.PORT || 8000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.p2btb5w.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 app.use(express.json());
@@ -37,6 +37,13 @@ async function run() {
             }
         }
         const result = await userCollection.updateOne(query, updatedDoc, options)
+        res.send(result)
+    })
+
+    app.get('/user/:email', async(req, res) => {
+        const email = req.params.email;
+        const query = {email : email};
+        const result = await userCollection.findOne(query);
         res.send(result)
     })
     
