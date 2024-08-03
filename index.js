@@ -60,6 +60,20 @@ async function run() {
       const result = await medicineCollection.find(query).toArray();
       res.send(result)
     })
+
+    app.delete('/medicine/:id', async(req, res) =>{
+      const id = req.params.id;
+      const query = {_id : new ObjectId(id)};
+      const result = await medicineCollection.deleteOne(query);
+      res.send(result)
+    })
+
+    app.get('/medicine/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = {_id : new ObjectId(id)};
+      const result = await medicineCollection.findOne(query);
+      res.send(result)
+    })
     
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
