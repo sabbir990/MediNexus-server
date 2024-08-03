@@ -23,7 +23,8 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     
-    const userCollection = client.db("mediNexus").collection("users")
+    const userCollection = client.db("mediNexus").collection("users");
+    const medicineCollection = client.db("mediNexus").collection('medicines')
 
     app.put('/user', async(req, res) => {
         const user = req.body;
@@ -45,6 +46,19 @@ async function run() {
         const query = {email : email};
         const result = await userCollection.findOne(query);
         res.send(result)
+    })
+
+    app.post('/medicines', async(req, res) => {
+      const medicine = req.body;
+      const result = await medicineCollection.insertOne(medicine)
+      res.send(result)
+    })
+
+    app.get('/medicines/:email', async(req, res) => {
+      const email = req.params.email;
+      const query = {email : email};
+      const result = await medicineCollection.find(query).toArray();
+      res.send(result)
     })
     
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
