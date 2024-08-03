@@ -22,71 +22,83 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    
+
     const userCollection = client.db("mediNexus").collection("users");
     const medicineCollection = client.db("mediNexus").collection('medicines')
 
-    app.put('/user', async(req, res) => {
-        const user = req.body;
-        const query = {email :  user?.email}
-        // const isExists = await userCollection.findOne(query)
-        const options = {upsert : true}
-        const updatedDoc = {
-            $set : {
-                ...user,
-                timeStamp : Date.now()
-            }
+    app.put('/user', async (req, res) => {
+      const user = req.body;
+      const query = { email: user?.email }
+      // const isExists = await userCollection.findOne(query)
+      const options = { upsert: true }
+      const updatedDoc = {
+        $set: {
+          ...user,
+          timeStamp: Date.now()
         }
-        const result = await userCollection.updateOne(query, updatedDoc, options)
-        res.send(result)
+      }
+      const result = await userCollection.updateOne(query, updatedDoc, options)
+      res.send(result)
     })
 
-    app.get('/user/:email', async(req, res) => {
-        const email = req.params.email;
-        const query = {email : email};
-        const result = await userCollection.findOne(query);
-        res.send(result)
+    app.get('/user/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await userCollection.findOne(query);
+      res.send(result)
     })
 
-    app.post('/medicines', async(req, res) => {
+    app.post('/medicines', async (req, res) => {
       const medicine = req.body;
       const result = await medicineCollection.insertOne(medicine)
       res.send(result)
     })
 
-    app.get('/medicines/:email', async(req, res) => {
+    app.get('/medicines/:email', async (req, res) => {
       const email = req.params.email;
-      const query = {email : email};
+      const query = { email: email };
       const result = await medicineCollection.find(query).toArray();
       res.send(result)
     })
 
-    app.delete('/medicine/:id', async(req, res) =>{
+    app.delete('/medicine/:id', async (req, res) => {
       const id = req.params.id;
-      const query = {_id : new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await medicineCollection.deleteOne(query);
       res.send(result)
     })
 
-    app.get('/medicine/:id', async(req, res) => {
+    app.get('/medicine/:id', async (req, res) => {
       const id = req.params.id;
-      const query = {_id : new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await medicineCollection.findOne(query);
       res.send(result)
     })
-    
+
+    app.patch('/medicine', async (req, res) => {
+      const medicine = req.body;
+      const filter = { _id: new ObjectId(medicine?._id) }
+      const updatedDoc = {
+        $set: {
+          ...medicine
+        }
+      }
+      const result = await medicineCollection.updateOne(filter, updatedDoc);
+      res.send(result)
+    })
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
-    
+
   }
 }
 run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-    res.send("My Assignment 12 server is running...")
+  res.send("My Assignment 12 server is running...")
 })
 
 app.listen(port, () => {
-    console.log(`This server is running on port ${port}`)
+  console.log(`This server is running on port ${port}`)
 })
