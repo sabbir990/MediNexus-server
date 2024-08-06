@@ -24,7 +24,8 @@ async function run() {
   try {
 
     const userCollection = client.db("mediNexus").collection("users");
-    const medicineCollection = client.db("mediNexus").collection('medicines')
+    const medicineCollection = client.db("mediNexus").collection('medicines');
+    const cartCollection = client.db("mediNexus").collection('cart')
 
     app.put('/user', async (req, res) => {
       const user = req.body;
@@ -104,6 +105,12 @@ async function run() {
 
       const result = await medicineCollection.find(query).toArray();
       res.send(result)
+    })
+
+    app.post('/cart', async(req, res) => {
+      const medicine = req.body;
+      const result = await cartCollection.insertOne(medicine);
+      res.send(result);
     })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
