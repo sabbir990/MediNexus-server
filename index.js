@@ -89,17 +89,17 @@ async function run() {
     })
 
 
-    app.get('/medicine-number', async(req, res) => {
+    app.get('/medicine-number', async (req, res) => {
       const result = await medicineCollection.find().toArray();
       res.send(result);
     })
 
-    app.get('/medicine-by-category', async(req, res) => {
+    app.get('/medicine-by-category', async (req, res) => {
       const category = req.query.category;
       let query = {}
-      if(category && category !== null){
+      if (category && category !== null) {
         query = {
-          category : category
+          category: category
         }
       }
 
@@ -107,10 +107,27 @@ async function run() {
       res.send(result)
     })
 
-    app.post('/cart', async(req, res) => {
+    app.post('/cart', async (req, res) => {
       const medicine = req.body;
       const result = await cartCollection.insertOne(medicine);
       res.send(result);
+    })
+
+    app.get('/cart/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email }
+      const result = await cartCollection.find(query).toArray();
+
+      const groupedData = result?.reduce((accumulator, elements) => {
+        const existingItem = accumulator.find(item => item.itemName === elements.itemName);
+        if (existingItem) {
+          existingItem.quantity += 1
+        } else {
+          accumulator.push({ ...elements, quantity: 1 })
+        }
+        return accumulator
+      }, [])
+      res.send(groupedData)
     })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
