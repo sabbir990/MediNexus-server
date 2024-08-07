@@ -130,6 +130,18 @@ async function run() {
       res.send(groupedData)
     })
 
+    app.delete('/cart/:itemName', async (req, res) => {
+      const itemName = req.params.itemName;
+      const query = { itemName: itemName };
+      const result = await cartCollection.find(query).toArray();
+
+      const itemToDelete = result[0];
+      const id = itemToDelete._id;
+
+      const deletionOperation = await cartCollection.deleteOne({ _id: new ObjectId(id) });
+      res.send(deletionOperation);
+    })
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
 
