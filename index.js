@@ -1,9 +1,10 @@
+require('dotenv').config();
 const express = require('express');
 const app = express();
-require('dotenv').config();
 const cors = require('cors');
 const port = process.env.PORT || 8000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.p2btb5w.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 app.use(express.json());
@@ -140,6 +141,41 @@ async function run() {
 
       const deletionOperation = await cartCollection.deleteOne({ _id: new ObjectId(id) });
       res.send(deletionOperation);
+    })
+
+    app.get('/selected-medicine/:itemName', async (req, res) => {
+      const itemName = req.params.itemName;
+      const query = { itemName: itemName };
+      const result = await cartCollection.find(query).toArray();
+      res.send(result)
+    })
+
+    app.post('/create-payment-intent', async (req, res) => {
+      try {
+        const { discountedPrice } = req.body;
+        const amount = discountedPrice * 100;
+        if(!discountedPrice || amount < 1) return
+
+        const {client_secret} = await stripe.paymentIntents.create({
+          amount: amount ? parseInt(amount) : 0,
+          currency: "usd",
+          // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
+          automatic_payment_methods: {
+            enabled: true,
+          },
+        });
+
+        res.send({
+          clientSecret: client_secret,
+        });
+
+      } catch (error) {
+        res.send({
+          success: false,
+          error: error.message
+
+        })
+      }
     })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
