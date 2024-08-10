@@ -232,6 +232,36 @@ async function run() {
       res.send(result)
     })
 
+    app.get('/users', async(req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result)
+    })
+
+    app.patch('/user/:id', async(req, res) => {
+      const id = req.params.id;
+      const role = req?.body;
+
+      console.log(id, role)
+    })
+
+    app.get('/payments', async(req, res) => {
+      const result = await paymentCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.patch('/payment/:id', async(req, res) => {
+      const id = req.params.id;
+      const filter = {_id : new ObjectId(id)};
+      const updateDoc = {
+        $set : {
+          status : 'paid'
+        }
+      }
+
+      const result = await paymentCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    })
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
 
