@@ -28,6 +28,7 @@ async function run() {
     const medicineCollection = client.db("mediNexus").collection('medicines');
     const cartCollection = client.db("mediNexus").collection('cart');
     const paymentCollection = client.db("mediNexus").collection('payments');
+    const categoryCollection = client.db("mediNexus").collection('categories')
 
     app.put('/user', async (req, res) => {
       const user = req.body;
@@ -110,7 +111,7 @@ async function run() {
     })
 
     app.post('/cart', async (req, res) => {
-      const medicine = req.body;
+      const medicine = req?.body;
       const result = await cartCollection.insertOne(medicine);
       res.send(result);
     })
@@ -155,9 +156,9 @@ async function run() {
       try {
         const { discountedPrice } = req.body;
         const amount = discountedPrice * 100;
-        if(!discountedPrice || amount < 1) return
+        if (!discountedPrice || amount < 1) return
 
-        const {client_secret} = await stripe.paymentIntents.create({
+        const { client_secret } = await stripe.paymentIntents.create({
           amount: amount ? parseInt(amount) : 0,
           currency: "usd",
           // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
@@ -179,18 +180,50 @@ async function run() {
       }
     })
 
-    app.post('/billing', async(req, res) => {
+    app.post('/billing', async (req, res) => {
       const billing = req.body;
       const result = await paymentCollection.insertOne(billing);
       res.send(result)
     })
 
-    app.get('/billing-details/:id', async(req, res) => {
+    app.get('/billing-details/:id', async (req, res) => {
       const id = req?.params?.id;
-      const query = {_id : new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await paymentCollection.findOne(query);
       console.log(result)
       res.send(result);
+    })
+
+    app.get('/categories', async(req, res) => {
+      const result = await categoryCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.get('/medicines-by-category/:label', async(req, res) => {
+      const label = req?.params?.label;
+      const query = {category : label};
+      const result = await medicineCollection.find(query).toArray();
+      res.send(result)
+    })
+
+    app.delete('/category/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = {_id : new ObjectId(id)}
+      const findItem = await categoryCollection.findOne(query)
+      const itemCategory = findItem?.label;
+      const findInMedicineCollection = await medicineCollection.find({category : itemCategory}).toArray();
+      const findInCartCollection = await cartCollection.find({category : itemCategory}).toArray()
+      if(findInMedicineCollection){
+        const result = await medicineCollection.deleteMany({category : itemCategory});
+      }
+
+      if(findInCartCollection){
+        const result = await cartCollection.deleteMany({category : itemCategory});
+      }
+
+      const result = await categoryCollection.deleteOne(query);
+      res.send(result)
+
     })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
