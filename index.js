@@ -226,6 +226,12 @@ async function run() {
 
     })
 
+    app.post('/category', async(req, res) => {
+      const category = req.body;
+      const result = await categoryCollection.insertOne(category);
+      res.send(result)
+    })
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
 
