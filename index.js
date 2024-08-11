@@ -370,6 +370,13 @@ async function run() {
       res.send({total, pendingTotal, paidTotal, categorySpecification: categoryArray });
     })
 
+    app.get('/dashboard-user/:email', async(req, res) => {
+      const email = req.params.email;
+      const query = {buyerEmail : email};
+      const result = await paymentCollection.find(query).toArray();
+      res.send(result)
+    })
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
 
