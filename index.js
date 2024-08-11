@@ -118,7 +118,7 @@ async function run() {
 
     app.get('/cart/:email', async (req, res) => {
       const email = req.params.email;
-      const query = { userEmail: email }
+      const query = { buyerEmail: email }
       const result = await cartCollection.find(query).toArray();
 
       const groupedData = result?.reduce((accumulator, elements) => {
@@ -240,8 +240,15 @@ async function run() {
     app.patch('/user/:id', async(req, res) => {
       const id = req.params.id;
       const role = req?.body;
+      const filter = {_id : new ObjectId(id)};
+      const updateDoc = {
+        $set : {
+          role : role?.role
+        }
+      }
 
-      console.log(id, role)
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result)
     })
 
     app.get('/payments', async(req, res) => {
@@ -259,6 +266,13 @@ async function run() {
       }
 
       const result = await paymentCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    })
+
+    app.get('/payments/:email', async(req, res) => {
+      const email = req.params.email;
+      const query = {sellerEmail : email};
+      const result = await paymentCollection.find(query).toArray();
       res.send(result);
     })
 
