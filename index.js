@@ -194,31 +194,31 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/categories', async(req, res) => {
+    app.get('/categories', async (req, res) => {
       const result = await categoryCollection.find().toArray();
       res.send(result);
     })
 
-    app.get('/medicines-by-category/:label', async(req, res) => {
+    app.get('/medicines-by-category/:label', async (req, res) => {
       const label = req?.params?.label;
-      const query = {category : label};
+      const query = { category: label };
       const result = await medicineCollection.find(query).toArray();
       res.send(result)
     })
 
-    app.delete('/category/:id', async(req, res) => {
+    app.delete('/category/:id', async (req, res) => {
       const id = req.params.id;
-      const query = {_id : new ObjectId(id)}
+      const query = { _id: new ObjectId(id) }
       const findItem = await categoryCollection.findOne(query)
       const itemCategory = findItem?.label;
-      const findInMedicineCollection = await medicineCollection.find({category : itemCategory}).toArray();
-      const findInCartCollection = await cartCollection.find({category : itemCategory}).toArray()
-      if(findInMedicineCollection){
-        const result = await medicineCollection.deleteMany({category : itemCategory});
+      const findInMedicineCollection = await medicineCollection.find({ category: itemCategory }).toArray();
+      const findInCartCollection = await cartCollection.find({ category: itemCategory }).toArray()
+      if (findInMedicineCollection) {
+        const result = await medicineCollection.deleteMany({ category: itemCategory });
       }
 
-      if(findInCartCollection){
-        const result = await cartCollection.deleteMany({category : itemCategory});
+      if (findInCartCollection) {
+        const result = await cartCollection.deleteMany({ category: itemCategory });
       }
 
       const result = await categoryCollection.deleteOne(query);
@@ -226,24 +226,24 @@ async function run() {
 
     })
 
-    app.post('/category', async(req, res) => {
+    app.post('/category', async (req, res) => {
       const category = req.body;
       const result = await categoryCollection.insertOne(category);
       res.send(result)
     })
 
-    app.get('/users', async(req, res) => {
+    app.get('/users', async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result)
     })
 
-    app.patch('/user/:id', async(req, res) => {
+    app.patch('/user/:id', async (req, res) => {
       const id = req.params.id;
       const role = req?.body;
-      const filter = {_id : new ObjectId(id)};
+      const filter = { _id: new ObjectId(id) };
       const updateDoc = {
-        $set : {
-          role : role?.role
+        $set: {
+          role: role?.role
         }
       }
 
@@ -251,17 +251,17 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/payments', async(req, res) => {
+    app.get('/payments', async (req, res) => {
       const result = await paymentCollection.find().toArray();
       res.send(result);
     })
 
-    app.patch('/payment/:id', async(req, res) => {
+    app.patch('/payment/:id', async (req, res) => {
       const id = req.params.id;
-      const filter = {_id : new ObjectId(id)};
+      const filter = { _id: new ObjectId(id) };
       const updateDoc = {
-        $set : {
-          status : 'paid'
+        $set: {
+          status: 'paid'
         }
       }
 
@@ -269,11 +269,105 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/payments/:email', async(req, res) => {
+    app.get('/payments/:email', async (req, res) => {
       const email = req.params.email;
-      const query = {sellerEmail : email};
+      const query = { sellerEmail: email };
       const result = await paymentCollection.find(query).toArray();
       res.send(result);
+    })
+
+    app.get('/admin-dashboard', async (req, res) => {
+      const result = await paymentCollection.find({}, {
+        projection: {
+          paid_total: 1, status: 1, category: 1
+        }
+      }).toArray();
+
+      const total = result.reduce((accumulator, item) => {
+        return accumulator + item?.paid_total;
+      }, 0)
+
+      let pending = result.filter(item => item?.status === 'pending')
+      let pendingTotal = pending.reduce((accumulator, item) => {
+        const total = accumulator + item?.paid_total;
+        return total
+      }, 0)
+
+      let paid = result.filter((item) => item?.status === 'paid');
+      let paidTotal = paid.reduce((accumulator, item) => {
+        const total = accumulator + item?.paid_total;
+        return total
+      }, 0)
+
+      const categorySpecification = result?.reduce((accumulator, item) => {
+        if (accumulator[item?.category]) {
+          accumulator[item?.category] += item?.paid_total
+        } else {
+          accumulator[item?.category] = item?.paid_total
+        }
+
+        return accumulator
+      })
+
+      delete categorySpecification.category;
+      delete categorySpecification.status;
+      delete categorySpecification._id;
+      delete categorySpecification.paid_total;
+
+      const categoryArray = Object.entries(categorySpecification);
+
+      // Add the header row
+      categoryArray.unshift(["Category", "Total Paid"]);
+
+      res.send({ total, pendingTotal, paidTotal, categorySpecification: categoryArray });
+
+
+    })
+
+    app.get('/seller-dashboard/:email', async (req, res) => {
+      const email = req.params?.email;
+      const query = { sellerEmail: email };
+      const result = await paymentCollection.find(query, {
+        projection: {
+          paid_total: 1, status: 1, category: 1
+        }
+      }).toArray()
+
+      const pending = result?.filter(item => item?.status === 'pending');
+      const pendingTotal = pending?.reduce((accumulator, item) => {
+        return accumulator + item?.paid_total
+      }, 0)
+
+      const paid = result.filter(item => item?.status === 'paid');
+      const paidTotal = paid.reduce((accumulator, item) => {
+        return accumulator + item?.paid_total
+      }, 0)
+
+      const total = result?.reduce((accumulator, item) => {
+        return accumulator + item?.paid_total;
+      }, 0)
+
+      const categorySpecification = result?.reduce((accumulator, item) => {
+        if (accumulator[item?.category]) {
+          accumulator[item?.category] += item?.paid_total
+        } else {
+          accumulator[item?.category] = item?.paid_total
+        }
+
+        return accumulator
+      }, {})
+
+      delete categorySpecification.category;
+      delete categorySpecification.status;
+      delete categorySpecification._id;
+      delete categorySpecification.paid_total;
+
+      const categoryArray = Object.entries(categorySpecification);
+
+      // Add the header row
+      categoryArray.unshift(["Category", "Total Paid"]);
+
+      res.send({total, pendingTotal, paidTotal, categorySpecification: categoryArray });
     })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
