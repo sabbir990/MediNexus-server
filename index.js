@@ -28,7 +28,8 @@ async function run() {
     const medicineCollection = client.db("mediNexus").collection('medicines');
     const cartCollection = client.db("mediNexus").collection('cart');
     const paymentCollection = client.db("mediNexus").collection('payments');
-    const categoryCollection = client.db("mediNexus").collection('categories')
+    const categoryCollection = client.db("mediNexus").collection('categories');
+    const advertisementCollection = client.db("mediNexus").collection('advertisements')
 
     app.put('/user', async (req, res) => {
       const user = req.body;
@@ -190,7 +191,6 @@ async function run() {
       const id = req?.params?.id;
       const query = { _id: new ObjectId(id) };
       const result = await paymentCollection.findOne(query);
-      console.log(result)
       res.send(result);
     })
 
@@ -376,6 +376,66 @@ async function run() {
       const result = await paymentCollection.find(query).toArray();
       res.send(result)
     })
+
+    app.get('/advertisement-medicines/:email', async(req, res) => {
+      const email = req.params.email;
+      const query = {email : email};
+      const result = await medicineCollection.find(query).toArray();
+      res.send(result);
+    })
+
+    app.put('/advertisement-request', async(req, res) => {
+      const advertisement = req.body;
+      const filter = {itemName : advertisement?.itemName}
+      const options = {upsert : true}
+      const updatedDoc = {
+        $set : {
+          ...advertisement
+        }
+      }
+      const result = await advertisementCollection.updateOne(filter, updatedDoc, options);
+      res.send(result)
+    })
+
+    app.get("/all-advertisements", async(req, res) => {
+      const result = await advertisementCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.patch('/add-advertisement/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+    
+      try {
+        const isAccepted = await advertisementCollection.findOne(filter);
+    
+        if (!isAccepted) {
+          return res.status(404).send({ error: 'Advertisement not found' });
+        }
+    
+        if (isAccepted.status === 'accepted') {
+          await advertisementCollection.deleteOne(filter);
+          return res.send({ message: 'Advertisement deleted' });
+        }
+    
+        const updateDoc = {
+          $set: { status: 'accepted' }
+        };
+    
+        const result = await advertisementCollection.updateOne(filter, updateDoc);
+    
+        if (result.modifiedCount === 0) {
+          return res.status(500).send({ error: 'Failed to update advertisement' });
+        }
+    
+        res.send({ message: 'Advertisement updated successfully' });
+    
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ error: 'An error occurred while processing your request' });
+      }
+    });
+    
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
