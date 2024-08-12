@@ -435,6 +435,12 @@ async function run() {
         res.status(500).send({ error: 'An error occurred while processing your request' });
       }
     });
+
+    app.get('/banner-items', async(req, res) => {
+      const query = {status : 'accepted'};
+      const result = await advertisementCollection.find(query).toArray();
+      res.send(result);
+    })
     
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
