@@ -9,7 +9,12 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.p2btb5w.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:5174"
+  ]
+}));
 
 const verifyToken = (req, res, next) => {
   if (!req.headers.authorization) {
@@ -130,7 +135,7 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/medicine/:id' , async (req, res) => {
+    app.get('/medicine/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await medicineCollection.findOne(query);
@@ -245,7 +250,7 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/billing-details/:id',verifyToken, verifyUser, async (req, res) => {
+    app.get('/billing-details/:id', verifyToken, verifyUser, async (req, res) => {
       const id = req?.params?.id;
       const query = { _id: new ObjectId(id) };
       const result = await paymentCollection.findOne(query);
